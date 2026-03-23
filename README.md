@@ -1,11 +1,11 @@
-# 🌿 Chia XCH Balance Checker
+# 🌿 Chia XCH Balance Checker v2
 
-Cek balance XCH + semua CAT token per wallet dari mnemonic phrase atau address langsung.
-Export otomatis ke `balance.txt` dan `no_balance.txt`.
+Cek balance XCH + semua CAT token dari **address.txt** atau **mnemonic.txt**,
+dengan **proxy rotation** untuk menghindari rate-limit Spacescan API.
 
 ---
 
-## 📦 Install Dependencies
+## 📦 Install
 
 ```bash
 pip install -r requirements.txt
@@ -13,57 +13,125 @@ pip install -r requirements.txt
 
 Atau manual:
 ```bash
-pip install mnemonic chia-bls bech32 requests
+pip install requests mnemonic chia-bls bech32
 ```
 
-> **Windows:** Jika `chia-bls` gagal, coba: `pip install blspy` (fallback otomatis).
+> **Windows:** Jika `chia-bls` gagal → `pip install blspy` (fallback otomatis).
+> **SOCKS5:** Tambah `pip install requests[socks]`
 
 ---
 
 ## 🚀 Cara Pakai
 
-### 1. Cek dari Mnemonic Phrase (24 kata)
-
+### Cek dari file address (paling umum)
 ```bash
-python chia_balance_checker.py --mnemonic "word1 word2 word3 ... word24"
+python chia_balance_checker.py --address-file address.txt
 ```
 
-Script akan otomatis menurunkan 20 address pertama dari mnemonic dan cek balance-nya.
-
-### 2. Jumlah Address yang Di-derive (default: 20)
-
+### Cek dari file mnemonic
 ```bash
-python chia_balance_checker.py --mnemonic "word1 ... word24" --count 50
+python chia_balance_checker.py --mnemonic-file mnemonic.txt
 ```
 
-> Rekomendasi: mulai dari 20–50. Kalau saldo tidak ketemu, coba naikkan ke 100.
-
-### 3. Banyak Mnemonic dari File
-
-Buat file `mnemonics.txt`, isi satu mnemonic per baris:
-
-```
-word1 word2 word3 ... word24
-apple banana cherry ... lastword
-...
-```
-
-Lalu jalankan:
+### Dengan proxy (anti rate-limit) + lebih banyak thread
 ```bash
-python chia_balance_checker.py --file mnemonics.txt --count 30
+python chia_balance_checker.py \
+    --address-file address.txt \
+    --proxy-file proxies.txt \
+    --threads 5
 ```
 
-### 4. Cek Address Langsung (tanpa mnemonic)
-
+### Input file campur address + mnemonic (auto-detect per baris)
 ```bash
-python chia_balance_checker.py --address xch1abc... xch1def...
+python chia_balance_checker.py --input-file semua.txt --proxy-file proxies.txt
 ```
 
-### 5. Output ke Folder Tertentu
-
+### Derive lebih banyak address per mnemonic
 ```bash
-python chia_balance_checker.py --mnemonic "..." --output-dir ./hasil
+python chia_balance_checker.py --mnemonic-file mnemonic.txt --count 50
 ```
+
+### Kombinasi semua input sekaligus
+```bash
+python chia_balance_checker.py \
+    --address-file address.txt \
+    --mnemonic-file mnemonic.txt \
+    --address xch1abc... xch1def... \
+    --proxy-file proxies.txt \
+    --threads 8 \
+    --count 30 \
+    --output-dir ./hasil
+```
+
+---
+
+## 📄 Format File
+
+**address.txt** — satu address per baris:
+```
+xch1ztyl7vjt4mgh5vp492537n6uyls40afxg5vll82jtnqz9f8jlpmqegfrpg
+xch1abc123...
+xch1def456...
+```
+
+**mnemonic.txt** — satu mnemonic per baris (12 atau 24 kata):
+```
+word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12
+apple banana cherry delta echo foxtrot golf hotel india juliet kilo lima ...
+```
+
+**proxies.txt** — satu proxy per baris:
+```
+http://123.45.67.89:8080
+http://user:pass@proxy.example.com:3128
+socks5://10.0.0.1:1080
+socks5://alice:secret@proxy2.example.com:1080
+45.67.89.12:3128
+```
+
+**semua.txt** (auto-detect per baris — campur address & mnemonic):
+```
+xch1ztyl7vjt4mgh5vp492537n6uyls40afxg5vll82jtnqz9f8jlpmqegfrpg
+word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12
+xch1abc123...
+apple banana cherry delta echo foxtrot golf hotel india juliet kilo lima ...
+```
+
+---
+
+## 🔀 Proxy Rotation
+
+Script secara otomatis:
+- **Rotasi proxy** round-robin untuk setiap request
+- **Blacklist** proxy yang gagal ≥5 kali
+- **Retry** dengan backoff eksponensial jika kena rate-limit (429)
+- Tampilkan **statistik** tiap proxy (✓ sukses / ✗ gagal) di akhir run
+
+Proxy gratis (kualitas bervariasi):
+- https://www.proxyscrape.com/free-proxy-list
+- https://www.proxy-list.download
+- https://spys.one/en/
+
+> Untuk hasil terbaik, gunakan proxy premium/private. Proxy gratis sering lambat/mati.
+
+---
+
+## ⚙️ Semua Flag
+
+| Flag | Shortcut | Fungsi |
+|------|----------|--------|
+| `--address-file FILE` | `-A` | Import file address |
+| `--mnemonic-file FILE` | `-M` | Import file mnemonic |
+| `--input-file FILE` | `-I` | Import file campur (auto-detect) |
+| `--address ADDR...` | `-a` | Address langsung di CLI |
+| `--mnemonic WORD...` | `-m` | Mnemonic langsung di CLI |
+| `--count N` | `-c` | Jumlah address per mnemonic (default: 20) |
+| `--proxy-file FILE` | `-P` | File daftar proxy |
+| `--proxy PROXY...` | | Proxy langsung di CLI |
+| `--delay DETIK` | | Override delay antar request |
+| `--threads N` | `-t` | Jumlah thread (default: 3) |
+| `--output-dir DIR` | `-o` | Folder output (default: `.`) |
+| `--quiet` | `-q` | Minimal output |
 
 ---
 
@@ -71,64 +139,60 @@ python chia_balance_checker.py --mnemonic "..." --output-dir ./hasil
 
 | File | Isi |
 |------|-----|
-| `balance.txt` | Semua wallet yang ada saldo XCH atau token, beserta detail dan valuasi USD |
-| `no_balance.txt` | Daftar address yang kosong |
+| `balance.txt` | Detail tiap wallet yang ada saldo: XCH + token + valuasi USD |
+| `no_balance.txt` | Daftar semua address kosong |
 
-### Contoh `balance.txt`:
-
+Contoh `balance.txt`:
 ```
-════════════════════════════════════════════════════════════
-  CHIA XCH BALANCE CHECKER — WALLET DENGAN SALDO
-  Waktu  : 2025-01-15 10:30:00
-  Total  : 3 wallet ada saldo dari 40 total
-  Harga  : 1 XCH = $32.50 USD
-════════════════════════════════════════════════════════════
+════════════════════════════════════════════════════════════════
+  CHIA XCH BALANCE CHECKER v2 — WALLET DENGAN SALDO
+  Waktu    : 2025-01-15 10:30:00
+  Wallet   : 3 wallet ada saldo
+  XCH/USD  : $32.5000
+════════════════════════════════════════════════════════════════
 
-TOTAL XCH: 12.34567800 XCH  ≈  $401.23 USD
+GRAND TOTAL : 12.34567800 XCH  ≈  $401.23 USD
 
-────────────────────────────────────────────────────────────
-[1/3] ADDRESS : xch1ztyl7vjt4mgh5vp492537n6uyls40afxg5vll82jtnqz9f8jlpmqegfrpg
-SPACESCAN: https://www.spacescan.io/address/xch1ztyl7...
-XCH      : 10.12345600 XCH  ≈  $329.01 USD
-TOKENS (2):
-  ├─ Marmot (MRMT): 500.000000  ≈  $12.5000 USD
-  ├─ ShibaInu (SHIB): 1000.00  ≈  $0.0010 USD
-STATUS   : ✅ ADA SALDO
+TOKEN CAT GABUNGAN (SEMUA WALLET):
+  ├─ Marmot                           500.000000 MRMT      ≈  $12.5000
+
+────────────────────────────────────────────────────────────────
+[1/3] xch1ztyl7vjt4mgh5vp492537n6uyls40afxg5vll82jtnqz9f8jlpmqegfrpg  [mnemonic #1, derive idx 0]
+  Explorer : https://www.spacescan.io/address/xch1ztyl7...
+  XCH      : 10.12345600 XCH  ≈  $329.0000 USD
+  TOKENS (1):
+    ├─ Marmot (MRMT): 500.000000  ≈  $12.500000 USD
 ```
 
 ---
 
 ## ⚠️ Keamanan
 
-- **Script berjalan 100% offline untuk derivasi key.** Mnemonic phrase tidak pernah dikirim ke server manapun.
-- Request hanya ke `api.spacescan.io` untuk mengambil data balance (public blockchain data).
-- **Jangan bagikan mnemonic phrase ke siapapun atau memasukkannya di komputer yang tidak aman.**
-- Simpan file `balance.txt` di tempat yang aman.
+- Derivasi key BLS12-381 berjalan **100% lokal** — mnemonic tidak pernah keluar dari komputermu
+- Hanya request ke `api.spacescan.io` untuk balance (data publik blockchain)
+- Jangan jalankan di komputer yang tidak dipercaya
+- Jangan share file `balance.txt` yang berisi address dengan saldo besar
 
 ---
 
 ## 🛠 Troubleshooting
 
-**Error: `chia-bls` gagal install**
+**`chia-bls` gagal install:**
 ```bash
-pip install blspy
-# Script akan otomatis deteksi dan menggunakan blspy
+pip install blspy  # fallback, otomatis terdeteksi
 ```
 
-**Error: Rate limited oleh API**
-Script sudah handle otomatis dengan delay dan retry. Jika masih error, tambah delay di kode:
-```python
-RATE_LIMIT_WAIT = 1.0  # naikkan dari 0.4 ke 1.0
+**Error SOCKS5:**
+```bash
+pip install requests[socks]
 ```
 
-**Address yang diturunkan tidak match dengan wallet Chia**
-Chia menggunakan BLS12-381 dengan path `m/12381/8444/2/index`. Pastikan mnemonic 24 kata.
-Coba naikkan `--count` karena wallet mungkin menggunakan index yang lebih tinggi.
+**Masih rate-limited walaupun pakai proxy:**
+- Tambah `--delay 2.0`
+- Kurangi `--threads` ke 1–2
+- Gunakan proxy premium, bukan proxy gratis
 
----
-
-## 📊 API yang Digunakan
-
-- `GET https://api.spacescan.io/address/xch-balance/{address}` — Balance XCH
-- `GET https://api.spacescan.io/address/cat-balance/{address}` — Balance CAT tokens  
-- `GET https://api.spacescan.io/price/xch?currency=USD` — Harga XCH
+**Address tidak cocok dengan wallet Chia:**
+- Pastikan mnemonic 12 atau 24 kata BIP-39 bahasa Inggris
+- Coba naikkan `--count` (default 20 mungkin belum cukup)
+- Beberapa wallet pakai index tinggi (coba `--count 100`)

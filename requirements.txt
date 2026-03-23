@@ -1,12 +1,10 @@
-# Chia XCH Balance Checker — Requirements
+# Chia XCH Balance Checker v2
 # Install: pip install -r requirements.txt
 
+requests>=2.28.0
 mnemonic>=0.20
-requests>=2.28
 bech32>=1.2.0
 
-# BLS cryptography (pilih salah satu, chia-bls lebih modern):
+# BLS12-381 crypto — pilih salah satu (chia-bls lebih direkomendasikan):
 chia-bls>=1.0.0
-
-# Alternatif jika chia-bls gagal install:
-# blspy>=2.0.0
+# Kalau chia-bls gagal install, coba: pip install blspy

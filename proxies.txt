@@ -1,0 +1,18 @@
+# proxies.txt — satu proxy per baris
+# Format yang didukung:
+#   http://ip:port
+#   http://username:password@ip:port
+#   socks5://ip:port
+#   socks5://username:password@ip:port
+#   ip:port                           (dianggap HTTP otomatis)
+#
+# Baris yang diawali # diabaikan.
+# Proxy gratis bisa didapat dari: https://www.proxyscrape.com
+#                                 https://www.proxy-list.download
+#                                 https://hidemy.name
+
+# Contoh (ganti dengan proxy aslimu):
+# http://123.45.67.89:8080
+# http://user:pass@proxy.example.com:3128
+# socks5://10.0.0.1:1080
+# socks5://alice:secret@proxy2.example.com:1080

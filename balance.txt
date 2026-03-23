@@ -1,0 +1,8 @@
+════════════════════════════════════════════════════════════
+  CHIA XCH BALANCE CHECKER — WALLET DENGAN SALDO
+  Waktu  : 2026-03-23 14:16:34
+  Total  : 0 wallet ada saldo dari 1 total
+  Harga  : 1 XCH = $0.0000 USD
+════════════════════════════════════════════════════════════
+
+Tidak ada wallet dengan saldo.
